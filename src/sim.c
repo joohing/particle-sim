@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     SDL_Window *window = SDL_CreateWindow("Hello everybody I am under the water",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        512, 512,
+        WIN_WIDTH, WIN_HEIGHT,
         0);
     if (!window)
     {
@@ -54,16 +54,23 @@ int main(int argc, char *argv[])
 
     // Main event loop
     int keep_win = 1;
+    int mouse_x, mouse_y;
+    int mouse_gravity = 1;
     SDL_Event e;
+    Uint32 before, after;
+    int delay;
 
-    // Sample state, remember free(state.particles)
+    const Uint8* keystates = SDL_GetKeyboardState(NULL);
+
     State* state = get_sample_state();
-    print_points((SDL_Point *) state->particles);
 
     while (keep_win)
     {
+        before = SDL_GetTicks();
+
         render_state(renderer, state);
         draw_current_render(renderer, window);
+        iter_state(state, mouse_gravity);
 
         while (SDL_PollEvent(&e) > 0)
         {
@@ -77,12 +84,29 @@ int main(int argc, char *argv[])
                 }
                 case SDL_MOUSEMOTION:
                 {
-                    int x, y;
-                    SDL_GetMouseState(&x, &y);
-                    printf("Mouse at (%d, %d)\n", x, y);
+                    SDL_GetMouseState(&mouse_x, &mouse_y);
+                    state->prts[POINT_MAX].x = mouse_x;
+                    state->prts[POINT_MAX].y = mouse_y;
                     break;
                 }
+                case SDL_KEYDOWN:
+                {
+                    if (e.key.keysym.sym == SDLK_r)
+                    {
+                        state = get_sample_state();
+                    }
+                }
             }
+
+            mouse_gravity = keystates[SDL_SCANCODE_SPACE];
+        }
+
+        after = SDL_GetTicks();
+        delay = before + FRAMETIME - after;
+
+        if (delay > 0)
+        {
+            SDL_Delay(delay);
         }
     }
 

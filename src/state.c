@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include "state.h"
+#include <math.h>
+#include "jonamath.h"
 
 // Controls the rate of change of the position of particles.
 float DX = 0.01;
@@ -13,59 +15,91 @@ int rng(int min, int max) {
     return (rand() % (max - min + 1)) + min;
 }
 
-//  0 if equal
-//  1 if i > j
-// -1 if i < j
-int sign(int i, int j)
-{
-    if (i == j)
-    {
-        return 0;
-    }
-    else if (i > j)
-    {
-        return 1;
-    }
-    else
-    {
-        return -1;
-    }
+// Absolute distance
+int dist(float x1, float y1, float x2, float y2) {
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+    return sqrt(dx * dx + dy * dy);
 }
 
-void print_points(SDL_Point points[])
+void print_particles(Particle prts[])
 {
     for (int i = 0; i < POINT_MAX; i++)
     {
-        printf("p%d: (%d, %d)\n", i, points[i].x, points[i].y);
+        printf("particle %d: pos (%f, %f), vel (%f, %f), mass %f\n",
+                i,
+                prts[i].x,
+                prts[i].y,
+                prts[i].vx,
+                prts[i].vy,
+                prts[i].m);
     }
 }
 
 // The idx is the index of a point. This point is mutated to be equal to itself
 // summed with its distances to the other points in the points array.
-void iter_point(int idx, SDL_Point *points[])
+void iter_point(int idx, Particle* prts, int mouse_gravity)
 {
-    int x, xi, y, yi, i;
+    int sign_x, sign_y, within_width, within_height;
+    float x, xi, y, yi, distance, dvx, dvy, fx, fy, upd_x, upd_y;
 
-    for (i = 0; i < POINT_MAX; i++)
+    for (int i = 0; i < POINT_MAX + mouse_gravity; i++)
     {
+        x = prts[idx].x;
+        y = prts[idx].y;
+
+        prts[idx].x = x + prts[idx].vx;
+        prts[idx].y = y + prts[idx].vy;
+
+        fprintf(stderr, "pos: (%f, %f), vel: (%f, %f)\n",
+                        x,
+                        y,
+                        prts[idx].vx,
+                        prts[idx].vy);
+
+        // If outside of bounds and NOT going in the right direction,
+        // reverse direction (with some inhibiting factor)
+        within_width = x > 0 && x < WIN_WIDTH;
+        within_height = y > 0 && y < WIN_HEIGHT;
+        if (!within_width)
+        {
+            upd_x = sign(prts[idx].x) * sign(prts[idx].vx) * (-1);
+            upd_x = upd_x < 0 ? -RESISTANCE : 1;
+            fprintf(stderr, "NOT within WIDTH, upd_x: %f\n", upd_x);
+            prts[idx].vx *= upd_x;
+        }
+        if (!within_height)
+        {
+            upd_y = sign(prts[idx].y) * sign(prts[idx].vy) * (-1);
+            upd_y = upd_y < 0 ? -RESISTANCE : 1;
+            fprintf(stderr, "NOT within HEIGHT, upd_y: %f\n", upd_y);
+            prts[idx].vy *= upd_y;
+        }
         if (i == idx) continue;
 
-        x = points[idx]->x;
-        xi = points[i]->x;
-        y = points[idx]->y;
-        yi = points[i]->y;
+        xi = prts[i].x;
+        yi = prts[i].y;
+        sign_x = sign(xi - x) == 0 ? 1 : sign(xi - x);
+        sign_y = sign(yi - y) == 0 ? 1 : sign(yi - y);
+        distance = dist(x, y, xi, yi);
 
-        points[idx]->x = (x - xi) * sign(x, xi);
-        points[idx]->y = (y - yi) * sign(y, yi);
+        fx = G * prts[i].m * prts[idx].m / (distance * distance);
+        fy = G * prts[i].m * prts[idx].m / (distance * distance);
+        dvx = ITER_SCALE * sign_x * fx;
+        dvy = ITER_SCALE * sign_y * fy;
+
+        prts[idx].vx = prts[idx].vx + dvx;
+        prts[idx].vy = prts[idx].vy + dvy;
     }
 }
 
 // Mutate the state to simulate one step in the particle simulation.
-void iter_state(State *state)
+// mouse_gravity is whether or not the mouse should have gravity right now.
+void iter_state(State *state, int mouse_gravity)
 {
     for (int i = 0; i < POINT_MAX; i++)
     {
-        iter_point(i, state->particles);
+        iter_point(i, (Particle *) state->prts, mouse_gravity);
     }
 }
 
@@ -73,38 +107,20 @@ State* get_sample_state()
 {
     srand(time(NULL));
 
-    SDL_Point p0, p1, p2, p3, p4, p5, p6, p7;
+    // One extra particle is allocated to simulate the mouse having mass
+    Particle* prts = calloc(POINT_MAX + 1, sizeof(Particle));
+    prts[POINT_MAX].m = MOUSE_MASS;
 
-    p0.x = rng(0, 500);
-    p1.x = rng(0, 500);
-    p2.x = rng(0, 500);
-    p3.x = rng(0, 500);
-    p4.x = rng(0, 500);
-    p5.x = rng(0, 500);
-    p6.x = rng(0, 500);
-    p7.x = rng(0, 500);
-
-    p0.y = rng(0, 500);
-    p1.y = rng(0, 500);
-    p2.y = rng(0, 500);
-    p3.y = rng(0, 500);
-    p4.y = rng(0, 500);
-    p5.y = rng(0, 500);
-    p6.y = rng(0, 500);
-    p7.y = rng(0, 500);
-
-    SDL_Point prts[POINT_MAX];
-    prts[0] = p0;
-    prts[1] = p1;
-    prts[2] = p2;
-    prts[3] = p3;
-    prts[4] = p4;
-    prts[5] = p5;
-    prts[6] = p6;
-    prts[7] = p7;
+    for (int i = 0; i < POINT_MAX; i++) {
+        prts[i].vx = rng(VX_MIN, VX_MAX);
+        prts[i].vy = rng(VY_MIN, VY_MAX);
+        prts[i].m = rng(MIN_MASS, MAX_MASS);
+        prts[i].x = rng(WIN_WIDTH / 4, WIN_WIDTH * 3 / 4);
+        prts[i].y = rng(WIN_HEIGHT / 4, WIN_HEIGHT * 3 / 4);
+    }
 
     State* state_mem = calloc(1, sizeof(State));
-    memcpy(state_mem->particles, prts, sizeof(SDL_Point) * POINT_MAX);
+    memcpy(state_mem->prts, prts, sizeof(Particle) * (POINT_MAX + 1));
 
     return state_mem;
 }
