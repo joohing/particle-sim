@@ -6,7 +6,7 @@ static const float G = 0.6674;
 static const float RESISTANCE = 0.8;
 
 // Amount of points to make.
-static const int POINT_MAX = 8;
+static const int POINT_MAX = 10;
 
 // The mass controls acceleration of other points towards this one,
 // as well as the radius. When generating random points they will get

@@ -36,6 +36,45 @@ void print_particles(Particle prts[])
     }
 }
 
+// Mutate particle position and velocity when it bounces off the wall.
+void bounce_back(Particle* prt)
+{
+    int x = prt->x;
+    int y = prt->y;
+    int vx = prt->vx;
+    int vy = prt->vy;
+    int m = prt->m;
+
+    // If outside of bounds and NOT going in the right direction,
+    // reverse direction (with some inhibiting factor)
+    int within_width = x + m > 0 && x + m < WIN_WIDTH;
+    int within_height = y + m > 0 && y + m < WIN_HEIGHT;
+    if (!within_width)
+    {
+        if (x < 0)
+        {
+            prt->x = -x;
+        }
+        else
+        {
+            prt->x = WIN_WIDTH - m;
+        }
+        prt->vx *= -RESISTANCE;
+    }
+    if (!within_height)
+    {
+        if (y < 0)
+        {
+            prt->y = -y;
+        }
+        else
+        {
+            prt->y = WIN_HEIGHT - m;
+        }
+        prt->vy *= -RESISTANCE;
+    }
+}
+
 // The idx is the index of a point. This point is mutated to be equal to itself
 // summed with its distances to the other points in the points array.
 void iter_point(int idx, Particle* prts, int mouse_gravity)
@@ -57,24 +96,7 @@ void iter_point(int idx, Particle* prts, int mouse_gravity)
                         prts[idx].vx,
                         prts[idx].vy);
 
-        // If outside of bounds and NOT going in the right direction,
-        // reverse direction (with some inhibiting factor)
-        within_width = x > 0 && x < WIN_WIDTH;
-        within_height = y > 0 && y < WIN_HEIGHT;
-        if (!within_width)
-        {
-            upd_x = sign(prts[idx].x) * sign(prts[idx].vx) * (-1);
-            upd_x = upd_x < 0 ? -RESISTANCE : 1;
-            fprintf(stderr, "NOT within WIDTH, upd_x: %f\n", upd_x);
-            prts[idx].vx *= upd_x;
-        }
-        if (!within_height)
-        {
-            upd_y = sign(prts[idx].y) * sign(prts[idx].vy) * (-1);
-            upd_y = upd_y < 0 ? -RESISTANCE : 1;
-            fprintf(stderr, "NOT within HEIGHT, upd_y: %f\n", upd_y);
-            prts[idx].vy *= upd_y;
-        }
+        bounce_back(&prts[idx]);
         if (i == idx) continue;
 
         xi = prts[i].x;
