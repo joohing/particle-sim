@@ -6,19 +6,19 @@ static const float G = 0.6674;
 static const float RESISTANCE = 0.8;
 
 // Amount of points to make.
-static const int POINT_MAX = 10;
+static const int POINT_MAX = 8;
 
 // The mass controls acceleration of other points towards this one,
 // as well as the radius. When generating random points they will get
 // a random number between these two numbers.
-static const int MIN_MASS = 1;
+static const int MIN_MASS = 7;
 static const int MAX_MASS = 10;
 
 // How quick the start-up speed should be
 static const int VX_MIN = 0;
-static const int VX_MAX = 1;
+static const int VX_MAX = 0;
 static const int VY_MIN = 0;
-static const int VY_MAX = 1;
+static const int VY_MAX = 0;
 
 // How large the steps are for each simulation step.
 static const float ITER_SCALE = 4;
@@ -31,7 +31,7 @@ static const int WIN_HEIGHT = 1000;
 static const int MOUSE_MASS = 100;
 
 // How many ticks between each frame, at minimum.
-static const int FRAMETIME = 25;
+static const int FRAMETIME = 20;
 
 typedef struct Particle {
     float x;
