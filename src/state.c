@@ -7,8 +7,8 @@
 #include "jonamath.h"
 
 // Controls the rate of change of the position of particles.
-float DX = 0.01;
-float DY = 0.01;
+double DX = 1;
+double DY = 1;
 
 // Seed before calling with srand(time(NULL))
 int rng(int min, int max) {
@@ -16,9 +16,9 @@ int rng(int min, int max) {
 }
 
 // Absolute distance
-float dist(float x1, float y1, float x2, float y2) {
-    int dx = x2 - x1;
-    int dy = y2 - y1;
+double dist(float x1, float y1, float x2, float y2) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
     return sqrt(dx * dx + dy * dy);
 }
 
@@ -39,14 +39,12 @@ void print_particles(Particle prts[])
 // Mutate particle position and velocity when it bounces off the wall.
 void bounce_back(Particle* prt)
 {
-    float x = prt->x;
-    float y = prt->y;
-    float m = prt->m;
+    double x = prt->x;
+    double y = prt->y;
+    double m = prt->m;
 
-    // If outside of bounds and NOT going in the right direction,
-    // reverse direction (with some inhibiting factor)
-    int within_width = x - m > 0 && x + m < WIN_WIDTH;
-    int within_height = y - m > 0 && y + m < WIN_HEIGHT;
+    int within_width = x - m >= 0 && x + m <= WIN_WIDTH;
+    int within_height = y - m >= 0 && y + m <= WIN_HEIGHT;
     if (!within_width)
     {
         if (x - m < 0)
@@ -78,13 +76,13 @@ void bounce_back(Particle* prt)
 void collide(Particle* prt1, Particle* prt2)
 {
     // Final velocities.
-    float fvx1, fvy1, fvx2, fvy2;
+    double fvx1, fvy1, fvx2, fvy2;
 
     // Postions, masses, and velocities of the two particles.
-    float x1 = prt1->x, y1 = prt1->y, x2 = prt2->x, y2 = prt2->y;
-    float m1 = prt1->m, m2 = prt2->m;
-    float vx1 = prt1->vx, vy1 = prt1->vy, vx2 = prt2->vx, vy2 = prt2->vy;
-    float dst = dist(x1, y1, x2, y2);
+    double x1 = prt1->x, y1 = prt1->y, x2 = prt2->x, y2 = prt2->y;
+    double m1 = prt1->m, m2 = prt2->m;
+    double vx1 = prt1->vx, vy1 = prt1->vy, vx2 = prt2->vx, vy2 = prt2->vy;
+    double dst = dist(x1, y1, x2, y2);
 
     fvx1 = vx1 - (2 * m2) / (m1 + m2) * ((vx1 - vx2) * (x1 - x2)) / (dst * dst) * (x1 - x2);
     fvy1 = vy1 - (2 * m2) / (m1 + m2) * ((vy1 - vy2) * (y1 - y2)) / (dst * dst) * (y1 - y2);
@@ -96,7 +94,7 @@ void collide(Particle* prt1, Particle* prt2)
                     "Initial vels:\n  prt1: (%f, %f)\n  prt2: (%f, %f)\n"
                     "Final vels:\n  prt1: (%f, %f)\n  prt2: (%f, %f)\n"
                     "Masses:\n  prt1: %f\n  prt2: %f\n"
-                    "Distance:\n  %f",
+                    "Distance:\n  %f\n",
                      vx1, vy1, vx2, vy2,
                      fvx1, fvy1, fvx2, fvy2,
                      m1, m2, dst);
@@ -108,17 +106,17 @@ void collide(Particle* prt1, Particle* prt2)
 
     // Make sure they are not within each other after this, so adjust each's position
     // by their proportion of mass between the two.
-    float adj1 = m1 / (m1 + m2);
-    float adj2 = m2 / (m1 + m2);
+    double adj1 = m1 / (m1 + m2);
+    double adj2 = m2 / (m1 + m2);
 
     // Find the factor by which to multiply the positions
-    float hypot = dst;
-    float ratio = (m1 + m2 - hypot) / hypot;
+    double hypot = dst;
+    double ratio = (m1 + m2 - hypot) / hypot;
 
-    float dx1 = (x1 - x2) * ratio * adj1;
-    float dy1 = (y1 - y2) * ratio * adj1;
-    float dx2 = (x2 - x1) * ratio * adj2;
-    float dy2 = (y2 - y1) * ratio * adj2;
+    double dx1 = (x1 - x2) * ratio * adj1;
+    double dy1 = (y1 - y2) * ratio * adj1;
+    double dx2 = (x2 - x1) * ratio * adj2;
+    double dy2 = (y2 - y1) * ratio * adj2;
 
     // fprintf(stderr, "COLLISION!!! ratio: %f, dx1: %f, dy1: %f, dx2: %f, dy2: %f\n", ratio, dx1, dy1, dx2, dy2);
 
@@ -132,8 +130,8 @@ void collide(Particle* prt1, Particle* prt2)
 // summed with its distances to the other points in the points array.
 void iter_point(int idx, Particle* prts, int mouse_gravity)
 {
-    float sign_x, sign_y;
-    float x, xi, y, yi, m, mi, distance, dvx, dvy, fx, fy;
+    double sign_x, sign_y;
+    double x, xi, y, yi, m, mi, distance, dvx, dvy, fx, fy;
 
     for (int i = 0; i < POINT_MAX + mouse_gravity; i++)
     {
@@ -151,6 +149,11 @@ void iter_point(int idx, Particle* prts, int mouse_gravity)
         //                 prts[idx].vy);
 
         bounce_back(&prts[idx]);
+        if (EARTH_GRAVITY_ONLY)
+        {
+            prts[idx].vy += 0.00981;
+            continue;
+        }
         if (i == idx) continue;
 
         xi = prts[i].x;
