@@ -1,15 +1,18 @@
 // The gravitational constant (https://en.wikipedia.org/wiki/Gravitational_constant)
 // but a bit larger
-static const float G = 0.00006674;
+static const float G = 6.674;
 
-// Whether or not to simulate gravity from Earth only, meaning no gravity between particles
-static const int EARTH_GRAVITY_ONLY = 1;
+// Whether or not to simulate gravity from Earth
+static const int ENABLE_EARTH_GRAVITY = 0;
+
+// Whether or not to simulate gravity from Earth
+static const int ENABLE_INTERPARTICULAR_GRAVITY = 1;
 
 // Factor to multiply speed by when hitting the edge of the window.
 static const float RESISTANCE = 1;
 
 // Amount of points to make.
-static const int POINT_MAX = 1;
+static const int POINT_MAX = 10;
 
 // The mass controls acceleration of other points towards this one,
 // as well as the radius. When generating random points they will get
@@ -19,16 +22,22 @@ static const int MAX_MASS = 10;
 
 // How quick the start-up speed should be
 static const int VX_MIN = 1;
-static const int VX_MAX = 1;
+static const int VX_MAX = 3;
 static const int VY_MIN = 1;
-static const int VY_MAX = 1;
-
-// How large the steps are for each simulation step.
-static const float ITER_SCALE = 1;
+static const int VY_MAX = 3;
 
 // Screen size.
-static const int WIN_WIDTH = 1500;
-static const int WIN_HEIGHT = 1000;
+static const int WIN_WIDTH = 600;
+static const int WIN_HEIGHT = 600;
+
+// Bounds on the randomly generated start position.
+static const int X_MIN = WIN_WIDTH / 4;
+static const int X_MAX = WIN_WIDTH * 3 / 4;
+static const int Y_MIN = WIN_HEIGHT / 4;
+static const int Y_MAX = WIN_HEIGHT * 3 / 4;
+
+// How large the steps are for each simulation step.
+static const float ITER_SCALE = 4;
 
 // This makes the particles get some acceleration towards the cursor.
 static const int MOUSE_MASS = 100;
@@ -52,6 +61,7 @@ typedef struct State {
 } State;
 
 State* get_sample_state();
+State* get_test_state();
 void free_state_struct(State* state);
 void print_particles(Particle prts[]);
 void iter_state(State* state, int mouse_gravity);

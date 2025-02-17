@@ -78,7 +78,7 @@ void collide(Particle* prt1, Particle* prt2)
     // Final velocities.
     double fvx1, fvy1, fvx2, fvy2;
 
-    // Postions, masses, and velocities of the two particles.
+    // Positions, masses, and velocities of the two particles.
     double x1 = prt1->x, y1 = prt1->y, x2 = prt2->x, y2 = prt2->y;
     double m1 = prt1->m, m2 = prt2->m;
     double vx1 = prt1->vx, vy1 = prt1->vy, vx2 = prt2->vx, vy2 = prt2->vy;
@@ -124,58 +124,64 @@ void collide(Particle* prt1, Particle* prt2)
     prt1->y += dy1;
     prt2->x += dx2;
     prt2->y += dy2;
+
+    double new_dist = dist(prt1->x, prt1->y, prt2->x, prt2->y);
+    fprintf(stderr, "hello i am under the water: new_dist: %f, m1: %f, m2: %f\n", new_dist, m1, m2);
 }
 
 // The idx is the index of a point. This point is mutated to be equal to itself
 // summed with its distances to the other points in the points array.
+// TODO split udregning af positioner/velocities fra udregning af collisions
 void iter_point(int idx, Particle* prts, int mouse_gravity)
 {
     double sign_x, sign_y;
     double x, xi, y, yi, m, mi, distance, dvx, dvy, fx, fy;
 
-    for (int i = 0; i < POINT_MAX + mouse_gravity; i++)
+    prts[idx].x = prts[idx].x + prts[idx].vx;
+    prts[idx].y = prts[idx].y + prts[idx].vy;
+
+    x = prts[idx].x;
+    y = prts[idx].y;
+    m = prts[idx].m;
+
+    if (ENABLE_EARTH_GRAVITY)
     {
-        x = prts[idx].x;
-        y = prts[idx].y;
-        m = prts[idx].m;
+        prts[idx].vy += 0.00981;
+    }
 
-        prts[idx].x = x + prts[idx].vx;
-        prts[idx].y = y + prts[idx].vy;
+    for (int i = idx + 1; i < POINT_MAX + mouse_gravity; i++)
+    {
+        fprintf(stderr, "pos: (%f, %f), vel: (%f, %f)\n",
+                        x,
+                        y,
+                        prts[idx].vx,
+                        prts[idx].vy);
 
-        // fprintf(stderr, "pos: (%f, %f), vel: (%f, %f)\n",
-        //                 x,
-        //                 y,
-        //                 prts[idx].vx,
-        //                 prts[idx].vy);
-
-        bounce_back(&prts[idx]);
-        if (EARTH_GRAVITY_ONLY)
-        {
-            prts[idx].vy += 0.00981;
-            continue;
-        }
-        if (i == idx) continue;
-
+        mi = prts[i].m;
         xi = prts[i].x;
         yi = prts[i].y;
-        mi = prts[i].m;
-        sign_x = sign(xi - x) == 0 ? 1 : sign(xi - x);
-        sign_y = sign(yi - y) == 0 ? 1 : sign(yi - y);
         distance = dist(x, y, xi, yi);
 
-        if (distance < m + mi)
-        {
-            collide(&prts[idx], &prts[i]);
-        }
+        if (ENABLE_INTERPARTICULAR_GRAVITY == 0) continue;
 
-        fx = G * prts[i].m * prts[idx].m / (distance * distance);
-        fy = G * prts[i].m * prts[idx].m / (distance * distance);
+        sign_x = sign(xi - x) == 0 ? 1 : sign(xi - x);
+        sign_y = sign(yi - y) == 0 ? 1 : sign(yi - y);
+        fx = prts[i].m * prts[idx].m / (distance * distance);
+        fy = prts[i].m * prts[idx].m / (distance * distance);
         dvx = ITER_SCALE * sign_x * fx;
         dvy = ITER_SCALE * sign_y * fy;
 
         prts[idx].vx = prts[idx].vx + dvx;
         prts[idx].vy = prts[idx].vy + dvy;
+
+        if (distance < m + mi)
+        {
+            fprintf(stderr, "distance: %f, m: %f, mi: %f", distance, m, mi);
+            collide(&prts[idx], &prts[i]);
+        }
     }
+
+    bounce_back(&prts[idx]);
 }
 
 // Mutate the state to simulate one step in the particle simulation.
@@ -200,9 +206,34 @@ State* get_sample_state()
         prts[i].vx = rng(VX_MIN, VX_MAX);
         prts[i].vy = rng(VY_MIN, VY_MAX);
         prts[i].m = rng(MIN_MASS, MAX_MASS);
-        prts[i].x = rng(WIN_WIDTH / 4, WIN_WIDTH * 3 / 4);
-        prts[i].y = rng(WIN_HEIGHT / 4, WIN_HEIGHT * 3 / 4);
+        prts[i].x = rng(X_MIN, X_MAX);
+        prts[i].y = rng(Y_MIN, Y_MAX);
     }
+
+    State* state_mem = calloc(1, sizeof(State));
+    memcpy(state_mem->prts, prts, sizeof(Particle) * (POINT_MAX + 1));
+
+    return state_mem;
+}
+
+State* get_test_state()
+{
+    srand(time(NULL));
+
+    Particle* prts = calloc(POINT_MAX + 1, sizeof(Particle));
+    prts[POINT_MAX].m = MOUSE_MASS;
+
+    prts[0].vx = 2;
+    prts[0].vy = 0;
+    prts[0].m = 15;
+    prts[0].x = 750;
+    prts[0].y = 500;
+
+    prts[1].vx = 5;
+    prts[1].vy = 0;
+    prts[1].m = 10;
+    prts[1].x = 500;
+    prts[1].y = 500;
 
     State* state_mem = calloc(1, sizeof(State));
     memcpy(state_mem->prts, prts, sizeof(Particle) * (POINT_MAX + 1));
