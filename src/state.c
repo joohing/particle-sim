@@ -16,7 +16,7 @@ int rng(int min, int max) {
 }
 
 // Absolute distance
-int dist(float x1, float y1, float x2, float y2) {
+float dist(float x1, float y1, float x2, float y2) {
     int dx = x2 - x1;
     int dy = y2 - y1;
     return sqrt(dx * dx + dy * dy);
@@ -74,22 +74,32 @@ void bounce_back(Particle* prt)
 }
 
 // Perform a collision between two points.
-// Physics from this link, collision is elastic
-// (https://phys.libretexts.org/Courses/Joliet_Junior_College/Physics_201_-_Fall_2019v2/Book%3A_Custom_Physics_textbook_for_JJC/09%3A_Linear_Momentum_and_Collisions/9.16%3A_Collisions)
+// Collision is elastic. Read (https://en.wikipedia.org/wiki/Elastic_collision), two-dimensional case
 void collide(Particle* prt1, Particle* prt2)
 {
-    // Postions, masses and velocities of the two particles.
-    float vx1 = prt1->vx, vy1 = prt1->vy, vx2 = prt2->vx, vy2 = prt2->vy;
-    float m1 = prt1->m, m2 = prt2->m;
-    float x1 = prt1->x, y1 = prt1->y, x2 = prt2->x, y2 = prt2->y;
-
     // Final velocities.
     float fvx1, fvy1, fvx2, fvy2;
 
-    fvx1 = (m1 - m2) / (m1 + m2) * vx1 + (2 * m2) / (m1 + m2) * vx2;
-    fvy1 = (m1 - m2) / (m1 + m2) * vy1 + (2 * m2) / (m1 + m2) * vy2;
-    fvx2 = (m2 - m1) / (m1 + m2) * vx2 + (2 * m1) / (m1 + m2) * vx1;
-    fvy2 = (m2 - m1) / (m1 + m2) * vy2 + (2 * m1) / (m1 + m2) * vy1;
+    // Postions, masses, and velocities of the two particles.
+    float x1 = prt1->x, y1 = prt1->y, x2 = prt2->x, y2 = prt2->y;
+    float m1 = prt1->m, m2 = prt2->m;
+    float vx1 = prt1->vx, vy1 = prt1->vy, vx2 = prt2->vx, vy2 = prt2->vy;
+    float dst = dist(x1, y1, x2, y2);
+
+    fvx1 = vx1 - (2 * m2) / (m1 + m2) * ((vx1 - vx2) * (x1 - x2)) / (dst * dst) * (x1 - x2);
+    fvy1 = vy1 - (2 * m2) / (m1 + m2) * ((vy1 - vy2) * (y1 - y2)) / (dst * dst) * (y1 - y2);
+
+    fvx2 = vx2 - (2 * m1) / (m1 + m2) * ((vx2 - vx1) * (x2 - x1)) / (dst * dst) * (x2 - x1);
+    fvy2 = vy2 - (2 * m1) / (m1 + m2) * ((vy2 - vy1) * (y2 - y1)) / (dst * dst) * (y2 - y1);
+
+    fprintf(stderr, "Collision!\n"
+                    "Initial vels:\n  prt1: (%f, %f)\n  prt2: (%f, %f)\n"
+                    "Final vels:\n  prt1: (%f, %f)\n  prt2: (%f, %f)\n"
+                    "Masses:\n  prt1: %f\n  prt2: %f\n"
+                    "Distance:\n  %f",
+                     vx1, vy1, vx2, vy2,
+                     fvx1, fvy1, fvx2, fvy2,
+                     m1, m2, dst);
 
     prt1->vx = fvx1;
     prt1->vy = fvy1;
@@ -102,7 +112,7 @@ void collide(Particle* prt1, Particle* prt2)
     float adj2 = m2 / (m1 + m2);
 
     // Find the factor by which to multiply the positions
-    float hypot = dist(x1, y1, x2, y2);
+    float hypot = dst;
     float ratio = (m1 + m2 - hypot) / hypot;
 
     float dx1 = (x1 - x2) * ratio * adj1;
@@ -110,7 +120,7 @@ void collide(Particle* prt1, Particle* prt2)
     float dx2 = (x2 - x1) * ratio * adj2;
     float dy2 = (y2 - y1) * ratio * adj2;
 
-    fprintf(stderr, "COLLISION!!! ratio: %f, dx1: %f, dy1: %f, dx2: %f, dy2: %f\n", ratio, dx1, dy1, dx2, dy2);
+    // fprintf(stderr, "COLLISION!!! ratio: %f, dx1: %f, dy1: %f, dx2: %f, dy2: %f\n", ratio, dx1, dy1, dx2, dy2);
 
     prt1->x += dx1;
     prt1->y += dy1;
