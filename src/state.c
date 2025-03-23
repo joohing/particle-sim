@@ -129,20 +129,41 @@ void collide(Particle* prt1, Particle* prt2)
     fprintf(stderr, "hello i am under the water: new_dist: %f, m1: %f, m2: %f\n", new_dist, m1, m2);
 }
 
-// The idx is the index of a point. This point is mutated to be equal to itself
-// summed with its distances to the other points in the points array.
-// TODO split udregning af positioner/velocities fra udregning af collisions
-void iter_point(int idx, Particle* prts, int mouse_gravity)
+// Detect if point prts[idx] collided with any points in prts, and apply collision if
+// it did.
+void detect_collision(int idx, Particle* prts, int mouse_gravity)
+{
+    double x, y, m, mi, distance;
+
+    x = prts[idx].x;
+    y = prts[idx].y;
+    m = prts[idx].m;
+
+    for (int i = idx + 1; i < POINT_MAX + mouse_gravity; i++)
+    {
+        distance = dist(x, y, prts[i].x, prts[i].y);
+        mi = prts[i].m;
+
+        if (distance < m + mi)
+        {
+            fprintf(stderr, "distance: %f, m: %f, mi: %f", distance, m, mi);
+            collide(&prts[idx], &prts[i]);
+        }
+    }
+}
+
+// Update velocity of prts[idx] according to the positions and masses of other points
+// in prts.
+void iter_velocity(int idx, Particle* prts, int mouse_gravity)
 {
     double sign_x, sign_y;
-    double x, xi, y, yi, m, mi, distance, dvx, dvy, fx, fy;
+    double x, xi, y, yi, distance, dvx, dvy, fx, fy;
 
     prts[idx].x = prts[idx].x + prts[idx].vx;
     prts[idx].y = prts[idx].y + prts[idx].vy;
 
     x = prts[idx].x;
     y = prts[idx].y;
-    m = prts[idx].m;
 
     if (ENABLE_EARTH_GRAVITY)
     {
@@ -157,7 +178,6 @@ void iter_point(int idx, Particle* prts, int mouse_gravity)
                         prts[idx].vx,
                         prts[idx].vy);
 
-        mi = prts[i].m;
         xi = prts[i].x;
         yi = prts[i].y;
         distance = dist(x, y, xi, yi);
@@ -173,24 +193,25 @@ void iter_point(int idx, Particle* prts, int mouse_gravity)
 
         prts[idx].vx = prts[idx].vx + dvx;
         prts[idx].vy = prts[idx].vy + dvy;
-
-        if (distance < m + mi)
-        {
-            fprintf(stderr, "distance: %f, m: %f, mi: %f", distance, m, mi);
-            collide(&prts[idx], &prts[i]);
-        }
     }
-
-    bounce_back(&prts[idx]);
 }
 
 // Mutate the state to simulate one step in the particle simulation.
 // mouse_gravity is whether or not the mouse should have gravity right now.
 void iter_state(State *state, int mouse_gravity)
 {
-    for (int i = 0; i < POINT_MAX; i++)
+    int i;
+    for (i = 0; i < POINT_MAX; i++)
     {
-        iter_point(i, (Particle *) state->prts, mouse_gravity);
+        iter_velocity(i, (Particle *) state->prts, mouse_gravity);
+    }
+    for (i = 0; i < POINT_MAX; i++)
+    {
+        detect_collision(i, (Particle *) state->prts, mouse_gravity);
+    }
+    for (i = 0; i < POINT_MAX; i++)
+    {
+        bounce_back(&state->prts[i]);
     }
 }
 

@@ -3,10 +3,10 @@
 static const float G = 6.674;
 
 // Whether or not to simulate gravity from Earth
-static const int ENABLE_EARTH_GRAVITY = 0;
+static const int ENABLE_EARTH_GRAVITY = 1;
 
 // Whether or not to simulate gravity from Earth
-static const int ENABLE_INTERPARTICULAR_GRAVITY = 1;
+static const int ENABLE_INTERPARTICULAR_GRAVITY = 0;
 
 // Factor to multiply speed by when hitting the edge of the window.
 static const float RESISTANCE = 1;
@@ -43,7 +43,7 @@ static const float ITER_SCALE = 4;
 static const int MOUSE_MASS = 100;
 
 // How many ticks between each frame, at minimum.
-static const int FRAMETIME = 20;
+static const int FRAMETIME = 100;
 
 typedef struct Particle {
     double x;

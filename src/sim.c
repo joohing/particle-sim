@@ -7,11 +7,10 @@
 int main(int argc, char *argv[])
 {
     // Init SDL
-    int init_code = SDL_Init(SDL_INIT_VIDEO);
-    if (init_code < 0)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         printf("Couldn't initialize SDL2 Video: %s\n", SDL_GetError());
-        return init_code;
+        return -1;
     }
 
     // Create window
@@ -94,6 +93,12 @@ int main(int argc, char *argv[])
                     if (e.key.keysym.sym == SDLK_r)
                     {
                         state = get_sample_state();
+                    }
+                    if (e.key.keysym.sym == SDLK_ESCAPE)
+                    {
+                        SDL_Quit();
+                        keep_win = 0;
+                        break;
                     }
                 }
             }
