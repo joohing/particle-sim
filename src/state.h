@@ -1,34 +1,37 @@
 // The gravitational constant (https://en.wikipedia.org/wiki/Gravitational_constant)
 // but a bit larger
-static const float G = 6.674;
+static const double G = 0; // 0.00000000006674;
 
 // Whether or not to simulate gravity from Earth
-static const int ENABLE_EARTH_GRAVITY = 1;
+static const int ENABLE_EARTH_GRAVITY = 0;
 
 // Whether or not to simulate gravity from Earth
-static const int ENABLE_INTERPARTICULAR_GRAVITY = 0;
+static const int ENABLE_INTERPARTICULAR_GRAVITY = 1;
 
 // Factor to multiply speed by when hitting the edge of the window.
 static const float RESISTANCE = 1;
 
 // Amount of points to make.
-static const int POINT_MAX = 10;
+static const int POINT_MAX = 15;
 
 // The mass controls acceleration of other points towards this one,
 // as well as the radius. When generating random points they will get
 // a random number between these two numbers.
-static const int MIN_MASS = 2;
-static const int MAX_MASS = 10;
+static const int MIN_MASS = 10;
+static const int MAX_MASS = 25;
+
+// How many pixels make up one meter
+static const int PIXELS_PER_METER = 3;
 
 // How quick the start-up speed should be
-static const int VX_MIN = 1;
+static const int VX_MIN = -3;
 static const int VX_MAX = 3;
-static const int VY_MIN = 1;
+static const int VY_MIN = -3;
 static const int VY_MAX = 3;
 
 // Screen size.
-static const int WIN_WIDTH = 600;
-static const int WIN_HEIGHT = 600;
+static const int WIN_WIDTH = 1500;
+static const int WIN_HEIGHT = 1200;
 
 // Bounds on the randomly generated start position.
 static const int X_MIN = WIN_WIDTH / 4;
@@ -37,13 +40,13 @@ static const int Y_MIN = WIN_HEIGHT / 4;
 static const int Y_MAX = WIN_HEIGHT * 3 / 4;
 
 // How large the steps are for each simulation step.
-static const float ITER_SCALE = 4;
+static const float ITER_SCALE = 1;
 
 // This makes the particles get some acceleration towards the cursor.
 static const int MOUSE_MASS = 100;
 
 // How many ticks between each frame, at minimum.
-static const int FRAMETIME = 100;
+static const int FRAMETIME = 10;
 
 typedef struct Particle {
     double x;

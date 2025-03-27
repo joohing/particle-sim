@@ -7,13 +7,18 @@
 #include "jonamath.h"
 
 // Controls the rate of change of the position of particles.
-double DX = 1;
-double DY = 1;
+double DX = 10;
+double DY = 10;
 
 // Seed before calling with srand(time(NULL))
 int rng(int min, int max) {
     return (rand() % (max - min + 1)) + min;
 }
+
+// Convert meters to pixels and pixels to meters using PIXELS_PER_METER
+// When doing gravity calculations, use meters.
+double m_to_pix(double m) { return m * PIXELS_PER_METER; }
+double pix_to_m(double pix) { return pix / PIXELS_PER_METER; }
 
 // Absolute distance
 double dist(float x1, float y1, float x2, float y2) {
@@ -82,22 +87,44 @@ void collide(Particle* prt1, Particle* prt2)
     double x1 = prt1->x, y1 = prt1->y, x2 = prt2->x, y2 = prt2->y;
     double m1 = prt1->m, m2 = prt2->m;
     double vx1 = prt1->vx, vy1 = prt1->vy, vx2 = prt2->vx, vy2 = prt2->vy;
+
+    // Displacements
     double dst = dist(x1, y1, x2, y2);
 
-    fvx1 = vx1 - (2 * m2) / (m1 + m2) * ((vx1 - vx2) * (x1 - x2)) / (dst * dst) * (x1 - x2);
-    fvy1 = vy1 - (2 * m2) / (m1 + m2) * ((vy1 - vy2) * (y1 - y2)) / (dst * dst) * (y1 - y2);
+    fvx1 = vx1 - (2.0 * m2) / (m1 + m2) * ((vx1 - vx2) * (x1 - x2)) / (dst * dst) * (x1 - x2);
+    fvy1 = vy1 - (2.0 * m2) / (m1 + m2) * ((vy1 - vy2) * (y1 - y2)) / (dst * dst) * (y1 - y2);
 
-    fvx2 = vx2 - (2 * m1) / (m1 + m2) * ((vx2 - vx1) * (x2 - x1)) / (dst * dst) * (x2 - x1);
-    fvy2 = vy2 - (2 * m1) / (m1 + m2) * ((vy2 - vy1) * (y2 - y1)) / (dst * dst) * (y2 - y1);
+    fvx2 = vx2 - (2.0 * m1) / (m1 + m2) * ((vx2 - vx1) * (x2 - x1)) / (dst * dst) * (x2 - x1);
+    fvy2 = vy2 - (2.0 * m1) / (m1 + m2) * ((vy2 - vy1) * (y2 - y1)) / (dst * dst) * (y2 - y1);
+
+    // Absolute velocity for each particle before and after collision.
+    double tinit_vel1 = dist(prt1->vx, prt1->vy, 0, 0);
+    double tinit_vel2 = dist(prt2->vx, prt2->vy, 0, 0);
+    double tafter_vel1 = dist(fvx1, fvy1, 0, 0);
+    double tafter_vel2 = dist(fvx2, fvy2, 0, 0);
+
+    // Total energy in the two particles before and after.
+    double energy_init = 0.5 * m1 * tinit_vel1 * tinit_vel1
+                       + 0.5 * m2 * tinit_vel2 * tinit_vel2;
+    double energy_after = 0.5 * m1 * tafter_vel1 * tafter_vel1
+                        + 0.5 * m2 * tafter_vel2 * tafter_vel2;
+
+    fprintf(stderr, "energy_init:\n  %f = %f * %f * %f * %f + %f * %f * %f * %f\n",
+            energy_init, 0.5, m1, tinit_vel1, tinit_vel1, 0.5, m2, tinit_vel2, tinit_vel2);
 
     fprintf(stderr, "Collision!\n"
-                    "Initial vels:\n  prt1: (%f, %f)\n  prt2: (%f, %f)\n"
-                    "Final vels:\n  prt1: (%f, %f)\n  prt2: (%f, %f)\n"
+                    "Initial vels:\n  prt1: (%f, %f) -> %f\n  prt2: (%f, %f) -> %f\n"
+                    "Final vels:\n  prt1: (%f, %f) -> %f\n  prt2: (%f, %f) -> %f\n"
                     "Masses:\n  prt1: %f\n  prt2: %f\n"
-                    "Distance:\n  %f\n",
-                     vx1, vy1, vx2, vy2,
-                     fvx1, fvy1, fvx2, fvy2,
-                     m1, m2, dst);
+                    "Distance:\n  %f\n"
+                    "Energy before:\n  %f\n"
+                    "Energy after:\n  %f\n",
+                     vx1, vy1, tinit_vel1,
+                     vx2, vy2, tinit_vel2,
+                     fvx1, fvy1, tafter_vel1,
+                     fvx2, fvy2, tafter_vel2,
+                     m1, m2, dst,
+                     energy_init, energy_after);
 
     prt1->vx = fvx1;
     prt1->vy = fvy1;
@@ -156,8 +183,8 @@ void detect_collision(int idx, Particle* prts, int mouse_gravity)
 // in prts.
 void iter_velocity(int idx, Particle* prts, int mouse_gravity)
 {
-    double sign_x, sign_y;
-    double x, xi, y, yi, distance, dvx, dvy, fx, fy;
+    double x_disp, y_disp;
+    double x, xi, y, yi, dst, dvx, dvy, fx, fy, r3, m, mi;
 
     prts[idx].x = prts[idx].x + prts[idx].vx;
     prts[idx].y = prts[idx].y + prts[idx].vy;
@@ -170,26 +197,41 @@ void iter_velocity(int idx, Particle* prts, int mouse_gravity)
         prts[idx].vy += 0.00981;
     }
 
+    if (ENABLE_INTERPARTICULAR_GRAVITY == 0) return;
+
     for (int i = idx + 1; i < POINT_MAX + mouse_gravity; i++)
     {
-        fprintf(stderr, "pos: (%f, %f), vel: (%f, %f)\n",
-                        x,
-                        y,
-                        prts[idx].vx,
-                        prts[idx].vy);
+        // fprintf(stderr, "pos: (%f, %f), vel: (%f, %f)\n",
+        //                 x,
+        //                 y,
+        //                 prts[idx].vx,
+        //                 prts[idx].vy);
 
         xi = prts[i].x;
         yi = prts[i].y;
-        distance = dist(x, y, xi, yi);
+        m = prts[idx].m;
+        mi = prts[i].m;
+        dst = max(dist(x, y, xi, yi), 1);
+        r3 = dst * dst * dst;
+        x_disp = prts[idx].x - prts[i].x;
+        y_disp = prts[idx].y - prts[i].y;
 
-        if (ENABLE_INTERPARTICULAR_GRAVITY == 0) continue;
+        fx = -G * (m * mi / r3) * x_disp;
+        fy = -G * (m * mi / r3) * y_disp;
 
-        sign_x = sign(xi - x) == 0 ? 1 : sign(xi - x);
-        sign_y = sign(yi - y) == 0 ? 1 : sign(yi - y);
-        fx = prts[i].m * prts[idx].m / (distance * distance);
-        fy = prts[i].m * prts[idx].m / (distance * distance);
-        dvx = ITER_SCALE * sign_x * fx;
-        dvy = ITER_SCALE * sign_y * fy;
+        dvx = fx;
+        dvy = fy;
+
+        /*fprintf(stderr,
+                "dvx:\n  %f\n"
+                "dvy:\n  %f\n"
+                "fx:\n  %f\n"
+                "fy:\n  %f\n"
+                "dist:\n  %f\n"
+                "m:\n  %f\n"
+                "mi:\n  %f\n",
+                dvx, dvy, fx, fy,
+                dst, prts[idx].m, prts[i].m);*/
 
         prts[idx].vx = prts[idx].vx + dvx;
         prts[idx].vy = prts[idx].vy + dvy;

@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
 
     // Main event loop
     int keep_win = 1;
+    int pause = 0;
     int mouse_x, mouse_y;
     int mouse_gravity = 1;
     SDL_Event e;
@@ -65,11 +66,14 @@ int main(int argc, char *argv[])
 
     while (keep_win)
     {
-        before = SDL_GetTicks();
+        if (pause != 1)
+        {
+            before = SDL_GetTicks();
 
-        render_state(renderer, state);
-        draw_current_render(renderer, window);
-        iter_state(state, mouse_gravity);
+            render_state(renderer, state);
+            draw_current_render(renderer, window);
+            iter_state(state, mouse_gravity);
+        }
 
         while (SDL_PollEvent(&e) > 0)
         {
@@ -99,6 +103,10 @@ int main(int argc, char *argv[])
                         SDL_Quit();
                         keep_win = 0;
                         break;
+                    }
+                    if (e.key.keysym.sym == SDLK_p)
+                    {
+                        pause = pause ^ 1;
                     }
                 }
             }
