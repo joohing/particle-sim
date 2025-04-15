@@ -30,8 +30,11 @@ static const int VY_MIN = -3;
 static const int VY_MAX = 3;
 
 // Screen size.
-static const int WIN_WIDTH = 1500;
-static const int WIN_HEIGHT = 1200;
+static const int WIN_WIDTH = 1200;
+static const int WIN_HEIGHT = 1000;
+
+// Tolerance for error in e.g. energy preservation.
+static const double EPS = 0.0003;
 
 // Bounds on the randomly generated start position.
 static const int X_MIN = WIN_WIDTH / 4;

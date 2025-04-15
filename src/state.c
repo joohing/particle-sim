@@ -91,11 +91,15 @@ void collide(Particle* prt1, Particle* prt2)
     // Displacements
     double dst = dist(x1, y1, x2, y2);
 
-    fvx1 = vx1 - (2.0 * m2) / (m1 + m2) * ((vx1 - vx2) * (x1 - x2)) / (dst * dst) * (x1 - x2);
-    fvy1 = vy1 - (2.0 * m2) / (m1 + m2) * ((vy1 - vy2) * (y1 - y2)) / (dst * dst) * (y1 - y2);
+    // Dot products
+    double dot1 = ((vx1 - vx2) * (x1 - x2)) + ((vy1 - vy2) * (y1 - y2));
+    double dot2 = ((vx2 - vx1) * (x2 - x1)) + ((vy2 - vy1) * (y2 - y1));
 
-    fvx2 = vx2 - (2.0 * m1) / (m1 + m2) * ((vx2 - vx1) * (x2 - x1)) / (dst * dst) * (x2 - x1);
-    fvy2 = vy2 - (2.0 * m1) / (m1 + m2) * ((vy2 - vy1) * (y2 - y1)) / (dst * dst) * (y2 - y1);
+    fvx1 = vx1 - (2.0 * m2) / (m1 + m2) * dot1 / (dst * dst) * (x1 - x2);
+    fvy1 = vy1 - (2.0 * m2) / (m1 + m2) * dot2 / (dst * dst) * (y1 - y2);
+
+    fvx2 = vx2 - (2.0 * m1) / (m1 + m2) * dot1 / (dst * dst) * (x2 - x1);
+    fvy2 = vy2 - (2.0 * m1) / (m1 + m2) * dot2 / (dst * dst) * (y2 - y1);
 
     // Absolute velocity for each particle before and after collision.
     double tinit_vel1 = dist(prt1->vx, prt1->vy, 0, 0);
@@ -109,22 +113,12 @@ void collide(Particle* prt1, Particle* prt2)
     double energy_after = 0.5 * m1 * tafter_vel1 * tafter_vel1
                         + 0.5 * m2 * tafter_vel2 * tafter_vel2;
 
-    fprintf(stderr, "energy_init:\n  %f = %f * %f * %f * %f + %f * %f * %f * %f\n",
-            energy_init, 0.5, m1, tinit_vel1, tinit_vel1, 0.5, m2, tinit_vel2, tinit_vel2);
-
-    fprintf(stderr, "Collision!\n"
-                    "Initial vels:\n  prt1: (%f, %f) -> %f\n  prt2: (%f, %f) -> %f\n"
-                    "Final vels:\n  prt1: (%f, %f) -> %f\n  prt2: (%f, %f) -> %f\n"
-                    "Masses:\n  prt1: %f\n  prt2: %f\n"
-                    "Distance:\n  %f\n"
-                    "Energy before:\n  %f\n"
-                    "Energy after:\n  %f\n",
-                     vx1, vy1, tinit_vel1,
-                     vx2, vy2, tinit_vel2,
-                     fvx1, fvy1, tafter_vel1,
-                     fvx2, fvy2, tafter_vel2,
-                     m1, m2, dst,
-                     energy_init, energy_after);
+    double delta_energy = energy_init - energy_after;
+    int no_energy_loss = -EPS < delta_energy && delta_energy < EPS;
+    if (no_energy_loss == 0)
+    {
+        fprintf(stderr, "Energy loss.\n  before: %f\n  after: %f\n", energy_init, energy_after);
+    }
 
     prt1->vx = fvx1;
     prt1->vy = fvy1;
@@ -145,15 +139,10 @@ void collide(Particle* prt1, Particle* prt2)
     double dx2 = (x2 - x1) * ratio * adj2;
     double dy2 = (y2 - y1) * ratio * adj2;
 
-    // fprintf(stderr, "COLLISION!!! ratio: %f, dx1: %f, dy1: %f, dx2: %f, dy2: %f\n", ratio, dx1, dy1, dx2, dy2);
-
     prt1->x += dx1;
     prt1->y += dy1;
     prt2->x += dx2;
     prt2->y += dy2;
-
-    double new_dist = dist(prt1->x, prt1->y, prt2->x, prt2->y);
-    fprintf(stderr, "hello i am under the water: new_dist: %f, m1: %f, m2: %f\n", new_dist, m1, m2);
 }
 
 // Detect if point prts[idx] collided with any points in prts, and apply collision if
@@ -173,7 +162,6 @@ void detect_collision(int idx, Particle* prts, int mouse_gravity)
 
         if (distance < m + mi)
         {
-            fprintf(stderr, "distance: %f, m: %f, mi: %f", distance, m, mi);
             collide(&prts[idx], &prts[i]);
         }
     }
@@ -286,14 +274,14 @@ State* get_test_state()
     Particle* prts = calloc(POINT_MAX + 1, sizeof(Particle));
     prts[POINT_MAX].m = MOUSE_MASS;
 
-    prts[0].vx = 2;
-    prts[0].vy = 0;
+    prts[0].vx = 1;
+    prts[0].vy = 1;
     prts[0].m = 15;
-    prts[0].x = 750;
-    prts[0].y = 500;
+    prts[0].x = 625;
+    prts[0].y = 625;
 
-    prts[1].vx = 5;
-    prts[1].vy = 0;
+    prts[1].vx = 2;
+    prts[1].vy = 2;
     prts[1].m = 10;
     prts[1].x = 500;
     prts[1].y = 500;
