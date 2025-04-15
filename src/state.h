@@ -1,6 +1,6 @@
 // The gravitational constant (https://en.wikipedia.org/wiki/Gravitational_constant)
 // but a bit larger
-static const double G = 0; // 0.00000000006674;
+static const double G = 0.0006674;
 
 // Whether or not to simulate gravity from Earth
 static const int ENABLE_EARTH_GRAVITY = 0;

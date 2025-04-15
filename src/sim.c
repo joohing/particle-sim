@@ -41,16 +41,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // Get surface from bitmap image
-    char* file = "./samples/sample.bmp";
-    SDL_Surface *img_sf = SDL_LoadBMP(file);
-    if (!img_sf)
-    {
-        printf("Couldn't load image %s, SDL_Error: %s", file, SDL_GetError());
-        return -1;
-    }
-    SDL_BlitSurface(img_sf, NULL, win_sf, NULL);
-
     // Main event loop
     int keep_win = 1;
     int pause = 0;
@@ -62,7 +52,7 @@ int main(int argc, char *argv[])
 
     const Uint8* keystates = SDL_GetKeyboardState(NULL);
 
-    State* state = get_sample_state();
+    State* state = get_test_state();
 
     while (keep_win)
     {
@@ -96,7 +86,7 @@ int main(int argc, char *argv[])
                 {
                     if (e.key.keysym.sym == SDLK_r)
                     {
-                        state = get_sample_state();
+                        state = get_test_state();
                     }
                     if (e.key.keysym.sym == SDLK_ESCAPE)
                     {

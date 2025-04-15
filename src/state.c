@@ -172,7 +172,7 @@ void detect_collision(int idx, Particle* prts, int mouse_gravity)
 void iter_velocity(int idx, Particle* prts, int mouse_gravity)
 {
     double x_disp, y_disp;
-    double x, xi, y, yi, dst, dvx, dvy, fx, fy, r3, m, mi;
+    double x, xi, y, yi, fx, fy, m, mi;
 
     prts[idx].x = prts[idx].x + prts[idx].vx;
     prts[idx].y = prts[idx].y + prts[idx].vy;
@@ -187,42 +187,22 @@ void iter_velocity(int idx, Particle* prts, int mouse_gravity)
 
     if (ENABLE_INTERPARTICULAR_GRAVITY == 0) return;
 
-    for (int i = idx + 1; i < POINT_MAX + mouse_gravity; i++)
+    for (int i = 0; i < POINT_MAX + mouse_gravity; i++)
     {
-        // fprintf(stderr, "pos: (%f, %f), vel: (%f, %f)\n",
-        //                 x,
-        //                 y,
-        //                 prts[idx].vx,
-        //                 prts[idx].vy);
+        if (i == idx) continue;
 
         xi = prts[i].x;
         yi = prts[i].y;
         m = prts[idx].m;
         mi = prts[i].m;
-        dst = max(dist(x, y, xi, yi), 1);
-        r3 = dst * dst * dst;
-        x_disp = prts[idx].x - prts[i].x;
-        y_disp = prts[idx].y - prts[i].y;
+        x_disp = xi - x;
+        y_disp = yi - y;
 
-        fx = -G * (m * mi / r3) * x_disp;
-        fy = -G * (m * mi / r3) * y_disp;
+        fx = G * m * mi / x_disp;
+        fy = G * m * mi / y_disp;
 
-        dvx = fx;
-        dvy = fy;
-
-        /*fprintf(stderr,
-                "dvx:\n  %f\n"
-                "dvy:\n  %f\n"
-                "fx:\n  %f\n"
-                "fy:\n  %f\n"
-                "dist:\n  %f\n"
-                "m:\n  %f\n"
-                "mi:\n  %f\n",
-                dvx, dvy, fx, fy,
-                dst, prts[idx].m, prts[i].m);*/
-
-        prts[idx].vx = prts[idx].vx + dvx;
-        prts[idx].vy = prts[idx].vy + dvy;
+        prts[idx].vx = prts[idx].vx + fx;
+        prts[idx].vy = prts[idx].vy + fy;
     }
 }
 
@@ -274,14 +254,14 @@ State* get_test_state()
     Particle* prts = calloc(POINT_MAX + 1, sizeof(Particle));
     prts[POINT_MAX].m = MOUSE_MASS;
 
-    prts[0].vx = 1;
-    prts[0].vy = 1;
+    prts[0].vx = 0;
+    prts[0].vy = 0;
     prts[0].m = 15;
     prts[0].x = 625;
     prts[0].y = 625;
 
-    prts[1].vx = 2;
-    prts[1].vy = 2;
+    prts[1].vx = 0;
+    prts[1].vy = 0;
     prts[1].m = 10;
     prts[1].x = 500;
     prts[1].y = 500;
