@@ -12,7 +12,7 @@ static const int ENABLE_INTERPARTICULAR_GRAVITY = 1;
 static const float RESISTANCE = 1;
 
 // Amount of points to make.
-static const int POINT_MAX = 15;
+#define POINT_MAX 15
 
 // The mass controls acceleration of other points towards this one,
 // as well as the radius. When generating random points they will get

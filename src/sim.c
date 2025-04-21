@@ -1,47 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include </opt/homebrew/Cellar/sdl2/2.30.10/include/SDL2/SDL.h>
+#include "SDL.h"
 #include "state.h"
 #include "draw.h"
 
 int main(int argc, char *argv[])
 {
-    // Init SDL
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
     {
-        printf("Couldn't initialize SDL2 Video: %s\n", SDL_GetError());
+        SDL_Log("Couldn't initialize SDL2: %s\n", SDL_GetError());
         return -1;
     }
 
-    // Create window
     SDL_Window *window = SDL_CreateWindow("Hello everybody I am under the water",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         WIN_WIDTH, WIN_HEIGHT,
         0);
-    if (!window)
+    if (window == NULL)
     {
-        printf("Failed to create a window :( SDL_Error: %s\n", SDL_GetError());
+        SDL_Log("Failed to create a window :( SDL_Error: %s\n", SDL_GetError());
         return -1;
     }
 
-    // Get surface for window
-    SDL_Surface *win_sf = SDL_GetWindowSurface(window);
-    if (!win_sf)
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
+    if (renderer == NULL)
     {
-        printf("Failed to get window surface :(, SDL_Error: %s\n", SDL_GetError());
+        SDL_Log("Got null pointer from SDL_GetRenderer. SDL_Error: %s\n", SDL_GetError());
         return -1;
     }
 
-    // Get renderer
-    SDL_Renderer *renderer = SDL_GetRenderer(window);
-    if (!renderer)
-    {
-        printf("Got null pointer from SDL_GetRenderer. SDL_Error: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    // Main event loop
     int keep_win = 1;
     int pause = 0;
     int mouse_x, mouse_y;
@@ -67,6 +55,7 @@ int main(int argc, char *argv[])
 
         while (SDL_PollEvent(&e) > 0)
         {
+        SDL_Log("ayo lmao");
             switch (e.type)
             {
                 case SDL_QUIT:
@@ -111,6 +100,7 @@ int main(int argc, char *argv[])
         {
             SDL_Delay(delay);
         }
+        SDL_Log("Ayo alskdjflksjdf");
     }
 
     return 0;
